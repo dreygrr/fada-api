@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `usuario` MODIFY `idTipo` INTEGER NOT NULL DEFAULT 2;
