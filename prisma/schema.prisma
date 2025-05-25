@@ -1,1 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+// #region TipoUsuario
+model TipoUsuario {
+  id Int @id @default(autoincrement())
+  nome String
+  descricao String?
+
+  usuarios Usuario[] //usuarios com esse tipo
+}
+// #endregion
+
+// #region Usuario
+model Usuario {
+  id Int @id @default(autoincrement())
+  idTipo Int @default(2)
+  email String @unique
+  senha String
+  dataNascimento DateTime
+  telefone String?
+  cpf String? @unique
+  nome String
+  sexo String?
+  entrouEm DateTime @default(now())
+  ativo Boolean @default(true)
+
+  tipo TipoUsuario @relation(fields: [idTipo], references: [id])
+
+  anuncios Anuncio[] //anuncios do usuario
+  carrinho Carrinho[] //produtos no carrinho
+  produto Produto[] //produtos do usuario
+  comentarios Comentario[] //comentarios do usuario
+  compras Compra[] //compras do usuario
+  enderecos Endereco[] //enderecos do usuario
+  favoritos Favoritos[] //favoritos do usuario
+  pedidos Pedido[] //pedidos do usuario
+  cupons UsuarioCupom[] //cupons do usuario
+  formasPagamento UsuarioFormaPagamento[] //formas de pagamento do usuario
+}
+// #endregion
+
+// #region Status
+model Status {
+  id Int @id @default(autoincrement())
+  nome String
+  descricao String?
+
+  anuncios Anuncio[] //anuncios com esse status
+  produtos Produto[] //produtos com esse status
+}
+// #endregion
+
+// #region Tamanho
+model Tamanho {
+  id Int @id @default(autoincrement())
+  nome String
+  descricao String?
+
+  produtos Produto[] //produtos com esse tamanho
+}
+// #endregion
+
+// #region Produto
+model Produto {
+  id Int @id @default(autoincrement())
+  idVendedor Int
+  idTamanho Int
+  idStatus Int
+  nome String
+  valor Float
+  estoque Int
+  descricao String?
+  aceitaDevolucao Boolean
+
+  vendedor Usuario @relation(fields: [idVendedor], references: [id])
+  tamanho Tamanho @relation(fields: [idTamanho], references: [id])
+  status Status @relation(fields: [idStatus], references: [id])
+
+  anuncios Anuncio[] //anuncios do produto
+  carrinho Carrinho[] //produtos no carrinho
+  compras Compra[] //compras do produto
+  categorias ProdutoCategoria[] //categorias do produto
+}
+// #endregion
+
+// #region Anuncio
+model Anuncio {
+  id Int @id @default(autoincrement())
+  idAnunciante Int
+  idProduto Int
+  idStatus Int
+  ativo Boolean
+  avaliacao Float?
+  descricao String?
+
+  anunciante Usuario @relation(fields: [idAnunciante], references: [id])
+  produto Produto @relation(fields: [idProduto], references: [id])
+  status Status @relation(fields: [idStatus], references: [id])
+
+  comentarios Comentario[] //comentarios do anuncio
+  favoritos Favoritos[] //favoritos do anuncio
+}
+// #endregion
+
+// #region Carrinho
+model Carrinho {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idProduto Int
+  checked Boolean
+  quantidade Int
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  produto Produto @relation(fields: [idProduto], references: [id])
+}
+// #endregion
+
+// #region Categoria
+model Categoria {
+  id Int @id @default(autoincrement())
+  nome String
+  descricao String?
+
+  produtos ProdutoCategoria[] //produtos com essa categoria
+}
+// #endregion
+
+// #region Comentario
+model Comentario {
+  id Int @id @default(autoincrement())
+  idAnuncio Int
+  idUsuario Int
+  respostaPara Int?
+  comentario String
+  data DateTime @default(now())
+
+  anuncio Anuncio @relation(fields: [idAnuncio], references: [id])
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  resposta Comentario? @relation("RespostaPara", fields: [respostaPara], references: [id])
+
+  comentarios Comentario[] @relation("RespostaPara") //respostas para o comentario
+}
+// #endregion
+
+// #region Compra
+model Compra {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idProduto Int
+  quantidade Int
+  data DateTime
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  produto Produto @relation(fields: [idProduto], references: [id])
+}
+// #endregion
+
+// #region Cupom
+model Cupom {
+  id Int @id @default(autoincrement())
+  nome String
+  codigo String @unique
+  ativo Boolean
+  desconto Float
+  validoDe DateTime
+  validoAte DateTime
+  usoMaximo Int?
+
+  usuarios UsuarioCupom[] //usuarios com o cupom
+}
+// #endregion
+
+// #region Endereco
+model Endereco {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  principal Boolean
+  nome String
+  rua String
+  numero String
+  bairro String
+  cidade String
+  estado String
+  cep String
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+}
+// #endregion Endereco
+
+// #region Favoritos
+model Favoritos {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idAnuncio Int
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  anuncio Anuncio @relation(fields: [idAnuncio], references: [id])
+}
+// #endregion
+
+// #region FormaPagamento
+model FormaPagamento {
+  id Int @id @default(autoincrement())
+  nome String
+
+  pedidos Pedido[] //pedidos com essa forma de pagamento
+  usuarios UsuarioFormaPagamento[] //usuarios com essa forma de pagamento
+}
+// #endregion
+
+// #region Pedido
+model Pedido {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idFormaPagamento Int
+  data DateTime
+  valorTotal Float
+  finalizado Boolean
+  finalizadoEm DateTime?
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  formaPagamento FormaPagamento @relation(fields: [idFormaPagamento], references: [id])
+}
+// #endregion
+
+// #region ProdutoCategoria
+model ProdutoCategoria {
+  id Int @id @default(autoincrement())
+  idProduto Int
+  idCategoria Int
+
+  produto Produto @relation(fields: [idProduto], references: [id])
+  categoria Categoria @relation(fields: [idCategoria], references: [id])
+}
+// #endregion
+
+// #region UsuarioCupom
+model UsuarioCupom {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idCupom Int
+  obtidoEm DateTime @default(now())
+  utilizado Boolean @default(false)
+  utilizadoEm DateTime?
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  cupom Cupom @relation(fields: [idCupom], references: [id])
+}
+// #endregion
+
+// #region UsuarioFormaPagamento
+model UsuarioFormaPagamento {
+  id Int @id @default(autoincrement())
+  idUsuario Int
+  idFormaPagamento Int
+  nome String
+  criadoEm DateTime @default(now())
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  formaPagamento FormaPagamento @relation(fields: [idFormaPagamento], references: [id])
+}
+// #endregion
